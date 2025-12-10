@@ -99,8 +99,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Create directory for WhatsApp auth data
-RUN mkdir -p .wwebjs_auth && chown -R nextjs:nextjs /app
+# Create directories for WhatsApp auth data and temp files
+RUN mkdir -p .wwebjs_auth /tmp/.X11-unix && chown -R nextjs:nextjs /app /tmp/.X11-unix
+
+# Set proper permissions for Chrome/Chromium to work
+RUN chmod -R 755 /app
 
 USER nextjs
 

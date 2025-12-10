@@ -103,6 +103,7 @@ export const initializeWhatsApp = async () => {
           "--disable-accelerated-2d-canvas",
           "--no-first-run",
           "--no-zygote",
+          "--single-process", // Important for Cloud Run
           "--disable-gpu",
           "--disable-software-rasterizer",
           "--disable-extensions",
@@ -120,6 +121,8 @@ export const initializeWhatsApp = async () => {
           "--mute-audio",
           "--hide-scrollbars",
           "--disable-default-apps",
+          "--disable-crash-reporter", // Disable crash reporting to avoid the crash handler error
+          "--disable-crashpad", // Disable crashpad entirely
         ],
       },
     });
