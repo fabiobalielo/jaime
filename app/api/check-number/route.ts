@@ -12,7 +12,7 @@ import {
 export async function POST(request: NextRequest) {
   try {
     // Parse JSON body with error handling
-    const { data: body, error: parseError } = await parseJsonBody(request);
+    const { data: body, error: parseError } = await parseJsonBody<Record<string, unknown>>(request);
     if (parseError) {
       return parseError;
     }
