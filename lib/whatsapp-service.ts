@@ -71,6 +71,23 @@ export const initializeWhatsApp = async () => {
     const authPath = path.join(process.cwd(), ".wwebjs_auth");
 
     console.log("Auth path:", authPath);
+    console.log("Chrome executable path:", executablePath || "NOT FOUND");
+
+    if (!executablePath) {
+      throw new Error(
+        "Chromium/Chrome executable not found. " +
+          "Please ensure Chromium is installed and PUPPETEER_EXECUTABLE_PATH is set correctly."
+      );
+    }
+
+    if (!fs.existsSync(executablePath)) {
+      throw new Error(
+        `Chromium executable not found at path: ${executablePath}. ` +
+          "Please verify the installation."
+      );
+    }
+
+    console.log("✓ Chromium executable verified at:", executablePath);
 
     const newClient = new Client({
       authStrategy: new LocalAuth({
@@ -87,6 +104,22 @@ export const initializeWhatsApp = async () => {
           "--no-first-run",
           "--no-zygote",
           "--disable-gpu",
+          "--disable-software-rasterizer",
+          "--disable-extensions",
+          "--disable-background-networking",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-breakpad",
+          "--disable-component-extensions-with-background-pages",
+          "--disable-features=TranslateUI",
+          "--disable-ipc-flooding-protection",
+          "--disable-renderer-backgrounding",
+          "--disable-sync",
+          "--force-color-profile=srgb",
+          "--metrics-recording-only",
+          "--mute-audio",
+          "--hide-scrollbars",
+          "--disable-default-apps",
         ],
       },
     });

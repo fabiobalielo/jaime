@@ -48,21 +48,44 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Install Chromium and dependencies for Puppeteer
+# Install Chromium and all dependencies for Puppeteer
 RUN apt-get update && apt-get install -y \
     chromium \
+    chromium-sandbox \
     libnss3 \
     libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libatspi2.0-0 \
+    libcups2 \
+    libdbus-1-3 \
     libdrm2 \
+    libgbm1 \
     libxkbcommon0 \
     libxcomposite1 \
     libxdamage1 \
     libxfixes3 \
     libxrandr2 \
-    libgbm1 \
+    libxss1 \
     libasound2 \
+    libpangocairo-1.0-0 \
+    libgtk-3-0 \
+    libgdk-pixbuf2.0-0 \
     fonts-liberation \
+    fonts-noto-color-emoji \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Verify Chromium installation and set up executable path
+RUN chromium --version || chromium-browser --version || true
+RUN if [ -f /usr/bin/chromium ]; then \
+        echo "Chromium found at /usr/bin/chromium"; \
+    elif [ -f /usr/bin/chromium-browser ]; then \
+        echo "Creating symlink for chromium-browser"; \
+        ln -s /usr/bin/chromium-browser /usr/bin/chromium; \
+    else \
+        echo "ERROR: Chromium not found!"; \
+        exit 1; \
+    fi
 
 # Set Chromium path for Puppeteer
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
