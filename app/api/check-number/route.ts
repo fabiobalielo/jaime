@@ -3,6 +3,7 @@ import { getWhatsAppClient, isWhatsAppReady } from '@/lib/whatsapp-service';
 import {
   parseJsonBody,
   validateRequired,
+  validateSecretKey,
   handleError,
   createErrorResponse,
   ErrorCode,
@@ -14,6 +15,12 @@ export async function POST(request: NextRequest) {
     const { data: body, error: parseError } = await parseJsonBody(request);
     if (parseError) {
       return parseError;
+    }
+
+    // Validate secret key if MESSAGE_SECRET_KEY is set
+    const secretKeyError = validateSecretKey(request);
+    if (secretKeyError) {
+      return secretKeyError;
     }
 
     // Validate required fields

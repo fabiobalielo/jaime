@@ -9,6 +9,7 @@ A web application that allows sending WhatsApp messages via a centralized WhatsA
 - ✨ Support for WhatsApp message formatting (bold, italic, strikethrough, monospace)
 - 🎨 Clean, modern UI built with Next.js and Tailwind CSS
 - 🔐 Single centralized WhatsApp Business account (no user login required)
+- 🔒 Optional secret key protection for API routes
 
 ## Tech Stack
 
@@ -38,7 +39,15 @@ pnpm install
 yarn install
 ```
 
-2. Start the development server:
+2. (Optional) Set up secret key protection by creating a `.env.local` file:
+
+```bash
+MESSAGE_SECRET_KEY=your-secret-key-here
+```
+
+If `MESSAGE_SECRET_KEY` is set, all API routes will require this secret key to be provided. If not set, the API remains open (no authentication required).
+
+3. Start the development server:
 
 ```bash
 npm run dev
@@ -48,9 +57,9 @@ pnpm dev
 yarn dev
 ```
 
-3. **IMPORTANT**: When you start the server, a QR code will be displayed in the terminal. Scan this QR code with your WhatsApp Business app to connect the account.
+4. **IMPORTANT**: When you start the server, a QR code will be displayed in the terminal. Scan this QR code with your WhatsApp Business app to connect the account.
 
-4. Once connected, open [http://localhost:3000](http://localhost:3000) in your browser.
+5. Once connected, open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Usage
 
@@ -58,9 +67,10 @@ yarn dev
 
 1. Navigate to `http://localhost:3000`
 2. Fill in the form:
-   - **Recipient Name** (optional): Name for reference
+   - **Your Name** (required): Sender name (minimum 3 characters) - will appear in bold at the beginning of the message
    - **Phone Number** (required): Include country code (e.g., +5511999999999)
    - **Message** (required): Your message with optional formatting
+   - **Secret Key** (optional): Required only if `MESSAGE_SECRET_KEY` is configured on the server
 3. Click "Send WhatsApp Message"
 
 #### Message Formatting
@@ -74,6 +84,8 @@ Use these formatting codes in your messages:
 
 ### API Endpoint
 
+> **Note**: If `MESSAGE_SECRET_KEY` environment variable is set, all API endpoints require authentication. Provide the secret key in the `x-secret-key` header.
+
 #### Send Message
 
 **POST** `/api/send-message`
@@ -86,6 +98,12 @@ Use these formatting codes in your messages:
   "number": "+5511999999999",
   "message": "Hello! This is a *formatted* message."
 }
+```
+
+**Headers (if MESSAGE_SECRET_KEY is set):**
+
+```
+x-secret-key: your-secret-key
 ```
 
 **Success Response:**
@@ -103,20 +121,90 @@ Use these formatting codes in your messages:
 
 ```json
 {
-  "error": "Error message description"
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Error message description",
+    "timestamp": "2024-01-01T00:00:00.000Z"
+  }
 }
 ```
 
+**Error Codes:**
+- `401`: Unauthorized (invalid or missing secret key when `MESSAGE_SECRET_KEY` is set)
+- `400`: Validation error (missing fields, invalid name, etc.)
+- `503`: WhatsApp not connected
+- `500`: Internal server error
+
 #### Check Connection Status
 
-**GET** `/api/send-message`
+**GET** `/api/status`
+
+**Headers (if MESSAGE_SECRET_KEY is set):**
+
+```
+x-secret-key: your-secret-key
+```
 
 **Response:**
 
 ```json
 {
-  "ready": true,
-  "status": "connected"
+  "success": true,
+  "data": {
+    "ready": true,
+    "status": "connected"
+  }
+}
+```
+
+#### Check Number Registration
+
+**POST** `/api/check-number`
+
+**Request Body:**
+
+```json
+{
+  "number": "+5511999999999"
+}
+```
+
+**Headers (if MESSAGE_SECRET_KEY is set):**
+
+```
+x-secret-key: your-secret-key
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "number": "5511999999999",
+    "chatId": "5511999999999@c.us",
+    "isRegistered": true
+  }
+}
+```
+
+#### Initialize WhatsApp
+
+**GET** `/api/init-whatsapp`
+
+**Headers (if MESSAGE_SECRET_KEY is set):**
+
+```
+x-secret-key: your-secret-key
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "WhatsApp initialization started",
+  "ready": false
 }
 ```
 
@@ -159,13 +247,28 @@ Always include the country code without the `+` or with it:
 - ✅ `1234567890` or `+11234567890` (US)
 - ❌ `999999999` (missing country code)
 
-### Security Vulnerabilities
+### Security
+
+#### Secret Key Protection
+
+To protect your API endpoints, set the `MESSAGE_SECRET_KEY` environment variable:
+
+```bash
+MESSAGE_SECRET_KEY=your-secure-secret-key-here
+```
+
+When set, all API routes require this secret key to be provided in the `x-secret-key` header.
+
+If `MESSAGE_SECRET_KEY` is not set, the API remains open (no authentication required).
+
+#### Other Security Considerations
 
 The initial installation may show some vulnerabilities from `whatsapp-web.js` dependencies. These are from the underlying Puppeteer library. For production use, consider:
 - Running in a containerized environment
 - Implementing rate limiting
-- Adding authentication
+- Using the secret key protection feature
 - Using allowlists for recipient numbers
+- Setting up proper firewall rules
 
 ## Production Deployment
 

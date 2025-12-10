@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { initializeWhatsApp, isWhatsAppReady } from '@/lib/whatsapp-service';
-import { handleError, createErrorResponse, ErrorCode } from '@/lib/api-errors';
+import { handleError, validateSecretKey } from '@/lib/api-errors';
 
 // This route initializes WhatsApp when the server starts
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Validate secret key if MESSAGE_SECRET_KEY is set
+    const secretKeyError = validateSecretKey(request);
+    if (secretKeyError) {
+      return secretKeyError;
+    }
     if (isWhatsAppReady()) {
       return NextResponse.json({
         success: true,
@@ -29,8 +34,13 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Validate secret key if MESSAGE_SECRET_KEY is set
+    const secretKeyError = validateSecretKey(request);
+    if (secretKeyError) {
+      return secretKeyError;
+    }
     if (isWhatsAppReady()) {
       return NextResponse.json({
         success: true,

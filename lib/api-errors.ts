@@ -5,6 +5,7 @@ export enum ErrorCode {
   BAD_REQUEST = 'BAD_REQUEST',
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   NOT_FOUND = 'NOT_FOUND',
+  UNAUTHORIZED = 'UNAUTHORIZED',
   
   // Server errors (5xx)
   INTERNAL_ERROR = 'INTERNAL_ERROR',
@@ -252,5 +253,46 @@ export function validateRequired(
   }
 
   return { valid: true };
+}
+
+/**
+ * Validates the secret key from headers only
+ * Returns null if MESSAGE_SECRET_KEY is not set (no protection needed)
+ * Returns error response if secret key is required but missing or invalid
+ * Returns null if secret key is valid
+ */
+export function validateSecretKey(
+  request: Request
+): NextResponse<ApiErrorResponse> | null {
+  const requiredSecretKey = process.env.MESSAGE_SECRET_KEY;
+  
+  // If no secret key is configured, no protection needed
+  if (!requiredSecretKey) {
+    return null;
+  }
+
+  // Get secret key from headers only
+  const providedSecretKey = request.headers.get('x-secret-key');
+
+  // If secret key is required but not provided
+  if (!providedSecretKey) {
+    return createErrorResponse(
+      ErrorCode.UNAUTHORIZED,
+      'Secret key is required. Please provide it in the "x-secret-key" header.',
+      401
+    );
+  }
+
+  // Validate the secret key
+  if (providedSecretKey !== requiredSecretKey) {
+    return createErrorResponse(
+      ErrorCode.UNAUTHORIZED,
+      'Invalid secret key',
+      401
+    );
+  }
+
+  // Secret key is valid
+  return null;
 }
 

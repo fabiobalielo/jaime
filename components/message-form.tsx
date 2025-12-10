@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +29,10 @@ export default function MessageForm() {
   const [countryCode, setCountryCode] = useState("+55");
   const [number, setNumber] = useState("");
   const [message, setMessage] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+  const [secretKeyRequired, setSecretKeyRequired] = useState<boolean | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "success" | "error" | "info" | null;
@@ -36,14 +40,25 @@ export default function MessageForm() {
   }>({ type: null, message: "" });
   const [whatsappReady, setWhatsappReady] = useState<boolean | null>(null);
 
-  // Check WhatsApp connection status on mount
+  // Check if secret key is required on mount
   useEffect(() => {
-    checkWhatsAppStatus();
-    const interval = setInterval(checkWhatsAppStatus, 5000); // Check every 5 seconds
-    return () => clearInterval(interval);
+    const checkAuthConfig = async () => {
+      try {
+        const response = await fetch("/api/auth-config");
+        const result = await response.json();
+        if (result.success) {
+          setSecretKeyRequired(result.data?.secretKeyRequired ?? false);
+        }
+      } catch (error) {
+        console.error("Error checking auth config:", error);
+        // Default to showing the field if we can't determine
+        setSecretKeyRequired(null);
+      }
+    };
+    checkAuthConfig();
   }, []);
 
-  const checkWhatsAppStatus = async () => {
+  const checkWhatsAppStatus = useCallback(async () => {
     try {
       const response = await fetch("/api/status");
       const result = await response.json();
@@ -53,7 +68,28 @@ export default function MessageForm() {
       console.error("Error checking WhatsApp status:", error);
       setWhatsappReady(false);
     }
-  };
+  }, []);
+
+  // Check WhatsApp connection status on mount
+  useEffect(() => {
+    checkWhatsAppStatus();
+    const interval = setInterval(checkWhatsAppStatus, 5000); // Check every 5 seconds
+    return () => clearInterval(interval);
+  }, [checkWhatsAppStatus]);
+
+  // Auto-dismiss status notifications after timeout
+  useEffect(() => {
+    if (status.type) {
+      const timeout = setTimeout(
+        () => {
+          setStatus({ type: null, message: "" });
+        },
+        status.type === "success" ? 5000 : 7000
+      ); // 5s for success, 7s for errors
+
+      return () => clearTimeout(timeout);
+    }
+  }, [status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,16 +108,24 @@ export default function MessageForm() {
     }
 
     try {
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+
+      if (secretKeyRequired && secretKey) {
+        headers["x-secret-key"] = secretKey;
+      }
+
+      const body: Record<string, string> = {
+        name: name.trim(),
+        number: `${countryCode}${number}`,
+        message: message.trim(), // Send raw message - server will add name in bold
+      };
+
       const response = await fetch("/api/send-message", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          number: `${countryCode}${number}`,
-          message: message.trim(), // Send raw message - server will add name in bold
-        }),
+        headers,
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -91,9 +135,7 @@ export default function MessageForm() {
           type: "success",
           message: `Message sent successfully to ${countryCode}${number}!`,
         });
-        // Clear form on success
-        setName("");
-        setNumber("");
+        // Clear only the message field on success
         setMessage("");
       } else {
         setStatus({
@@ -235,6 +277,26 @@ export default function MessageForm() {
               </p>
             </div>
 
+            {secretKeyRequired && (
+              <div className="space-y-2">
+                <Label htmlFor="secretKey">
+                  Secret Key <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="secretKey"
+                  type="password"
+                  placeholder="Enter secret key"
+                  value={secretKey}
+                  onChange={(e) => setSecretKey(e.target.value)}
+                  required
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500">
+                  Required to authenticate API requests
+                </p>
+              </div>
+            )}
+
             {message && (
               <div className="space-y-2">
                 <Label>Preview</Label>
@@ -268,7 +330,11 @@ export default function MessageForm() {
             <Button
               type="submit"
               disabled={
-                isLoading || !whatsappReady || !name || name.trim().length < 3
+                isLoading ||
+                !whatsappReady ||
+                !name ||
+                name.trim().length < 3 ||
+                (secretKeyRequired === true && !secretKey)
               }
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-lg"
             >

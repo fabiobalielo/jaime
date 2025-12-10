@@ -83,6 +83,18 @@ export default function ApiSidebar() {
           </div>
 
           <div className="space-y-4">
+            {/* Authentication Note */}
+            <Card className="bg-blue-50 border-blue-200">
+              <CardHeader>
+                <CardTitle className="text-lg text-blue-800">🔒 Authentication</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-blue-700">
+                  If <code className="bg-blue-100 px-1 rounded">MESSAGE_SECRET_KEY</code> is configured, all endpoints require authentication. Provide the secret key in the <code className="bg-blue-100 px-1 rounded">x-secret-key</code> header.
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Send Message API */}
             <Card>
               <CardHeader>
@@ -103,6 +115,12 @@ export default function ApiSidebar() {
                   </pre>
                 </div>
                 <div>
+                  <p className="text-sm font-semibold mb-2">Headers (if MESSAGE_SECRET_KEY is set):</p>
+                  <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
+{`x-secret-key: your-secret-key`}
+                  </pre>
+                </div>
+                <div>
                   <p className="text-sm font-semibold mb-2">Success Response (200):</p>
                   <pre className="text-xs bg-green-50 p-3 rounded overflow-x-auto">
 {`{
@@ -116,6 +134,7 @@ export default function ApiSidebar() {
                 <div>
                   <p className="text-sm font-semibold mb-2">Error Responses:</p>
                   <ul className="text-xs space-y-1 ml-4 list-disc">
+                    <li><strong>401:</strong> Unauthorized (invalid or missing secret key when MESSAGE_SECRET_KEY is set)</li>
                     <li><strong>400:</strong> Missing required fields or invalid name (must be at least 3 characters)</li>
                     <li><strong>503:</strong> WhatsApp not connected</li>
                     <li><strong>500:</strong> Failed to send message</li>
@@ -134,13 +153,28 @@ export default function ApiSidebar() {
                   Check WhatsApp connection status.
                 </p>
                 <div>
+                  <p className="text-sm font-semibold mb-2">Headers (if MESSAGE_SECRET_KEY is set):</p>
+                  <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
+{`x-secret-key: your-secret-key`}
+                  </pre>
+                </div>
+                <div>
                   <p className="text-sm font-semibold mb-2">Response (200):</p>
                   <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
 {`{
-  "ready": true,
-  "status": "connected"
+  "success": true,
+  "data": {
+    "ready": true,
+    "status": "connected"
+  }
 }`}
                   </pre>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold mb-2">Error Responses:</p>
+                  <ul className="text-xs space-y-1 ml-4 list-disc">
+                    <li><strong>401:</strong> Unauthorized (invalid or missing secret key when MESSAGE_SECRET_KEY is set)</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -163,15 +197,32 @@ export default function ApiSidebar() {
                   </pre>
                 </div>
                 <div>
+                  <p className="text-sm font-semibold mb-2">Headers (if MESSAGE_SECRET_KEY is set):</p>
+                  <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
+{`x-secret-key: your-secret-key`}
+                  </pre>
+                </div>
+                <div>
                   <p className="text-sm font-semibold mb-2">Response (200):</p>
                   <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
 {`{
-  "number": "5511999999999",
-  "chatId": "5511999999999@c.us",
-  "isRegistered": true,
-  "numberId": {...}
+  "success": true,
+  "data": {
+    "number": "5511999999999",
+    "chatId": "5511999999999@c.us",
+    "isRegistered": true,
+    "numberId": {...}
+  }
 }`}
                   </pre>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold mb-2">Error Responses:</p>
+                  <ul className="text-xs space-y-1 ml-4 list-disc">
+                    <li><strong>401:</strong> Unauthorized (invalid or missing secret key when MESSAGE_SECRET_KEY is set)</li>
+                    <li><strong>400:</strong> Invalid number format</li>
+                    <li><strong>503:</strong> WhatsApp not connected</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -186,13 +237,26 @@ export default function ApiSidebar() {
                   Initialize WhatsApp connection. Check server terminal for QR code.
                 </p>
                 <div>
+                  <p className="text-sm font-semibold mb-2">Headers (if MESSAGE_SECRET_KEY is set):</p>
+                  <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
+{`x-secret-key: your-secret-key`}
+                  </pre>
+                </div>
+                <div>
                   <p className="text-sm font-semibold mb-2">Response (200):</p>
                   <pre className="text-xs bg-gray-50 p-3 rounded overflow-x-auto">
 {`{
+  "success": true,
   "message": "WhatsApp initialization started",
   "ready": false
 }`}
                   </pre>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold mb-2">Error Responses:</p>
+                  <ul className="text-xs space-y-1 ml-4 list-disc">
+                    <li><strong>401:</strong> Unauthorized (invalid or missing secret key when MESSAGE_SECRET_KEY is set)</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
