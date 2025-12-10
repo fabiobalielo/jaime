@@ -51,7 +51,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Install Chromium and all dependencies for Puppeteer
 RUN apt-get update && apt-get install -y \
     chromium \
-    chromium-sandbox \
     libnss3 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -87,11 +86,17 @@ RUN if [ -f /usr/bin/chromium ]; then \
         exit 1; \
     fi
 
+# Remove or stub out the crashpad handler to prevent it from being called
+RUN find /usr -name "chrome_crashpad_handler" -type f 2>/dev/null | xargs -r rm -f || true
+
 # Set Chromium path for Puppeteer
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROME_PATH=/usr/bin/chromium
+# Disable crash reporting at environment level
+ENV CHROME_CRASHPAD_PIPE_NAME=""
+ENV BREAKPAD_DUMP_LOCATION=/tmp
 
 # Create a non-root user
 RUN groupadd -r nextjs && useradd -r -g nextjs nextjs

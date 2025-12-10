@@ -102,6 +102,12 @@ export const initializeWhatsApp = async () => {
       puppeteer: {
         headless: true,
         executablePath,
+        dumpio: false, // Don't dump IO to avoid extra overhead
+        env: {
+          ...process.env,
+          DBUS_SESSION_BUS_ADDRESS: "/dev/null", // Disable D-Bus
+          XDG_RUNTIME_DIR: tmpDir, // Set XDG runtime dir
+        },
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -109,7 +115,7 @@ export const initializeWhatsApp = async () => {
           "--disable-accelerated-2d-canvas",
           "--no-first-run",
           "--no-zygote",
-          "--single-process", // Important for Cloud Run
+          // REMOVED --single-process as it causes SIGTRAP in Cloud Run
           "--disable-gpu",
           "--disable-software-rasterizer",
           "--disable-extensions",
@@ -127,8 +133,9 @@ export const initializeWhatsApp = async () => {
           "--mute-audio",
           "--hide-scrollbars",
           "--disable-default-apps",
-          "--disable-crash-reporter", // Disable crash reporting to avoid the crash handler error
-          "--crash-dumps-dir=/tmp", // Set crash dump directory to /tmp
+          "--disable-web-security",
+          "--disable-features=IsolateOrigins,site-per-process",
+          "--blink-settings=imagesEnabled=false", // Disable images to save memory
           "--user-data-dir=" + tmpDir, // Set user data directory
         ],
       },
