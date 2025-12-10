@@ -272,6 +272,8 @@ The initial installation may show some vulnerabilities from `whatsapp-web.js` de
 
 ## Production Deployment
 
+### Local Production Build
+
 1. Build the application:
 
 ```bash
@@ -285,6 +287,88 @@ npm start
 ```
 
 3. Scan the QR code on first startup
+
+### Google Cloud Run Deployment
+
+This project is configured for automatic deployment to Google Cloud Run via GitHub integration.
+
+#### Prerequisites
+
+1. Google Cloud Project with billing enabled
+2. Cloud Build API enabled
+3. Cloud Run API enabled
+4. Container Registry API enabled
+5. GitHub repository connected to Google Cloud Build
+
+#### Setup Steps
+
+1. **Enable Required APIs** (if not already enabled):
+
+```bash
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable run.googleapis.com
+gcloud services enable containerregistry.googleapis.com
+```
+
+2. **Connect GitHub Repository to Cloud Build**:
+
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Navigate to **Cloud Build** > **Triggers**
+   - Click **Create Trigger**
+   - Connect your GitHub repository
+   - Select the repository and branch (usually `main` or `master`)
+   - Set the configuration type to **Cloud Build configuration file (yaml or json)**
+   - Set the location to `cloudbuild.yaml`
+   - Configure substitution variables:
+     - `_SERVICE_NAME`: `jaimewhats` (or your preferred service name)
+     - `_REGION`: `us-central1` (or your preferred region)
+   - Save the trigger
+
+3. **Configure Environment Variables** (if needed):
+
+   If you're using `MESSAGE_SECRET_KEY`, set it in Cloud Run:
+   
+   ```bash
+   gcloud run services update jaimewhats \
+     --region=us-central1 \
+     --set-env-vars="MESSAGE_SECRET_KEY=your-secret-key-here"
+   ```
+
+4. **Deploy**:
+
+   - Push to your connected branch to trigger automatic deployment
+   - Or manually trigger from Cloud Build console
+
+5. **Access Your Service**:
+
+   After deployment, you'll get a Cloud Run URL like:
+   ```
+   https://jaimewhats-xxxxx-uc.a.run.app
+   ```
+
+6. **View Logs**:
+
+   ```bash
+   gcloud run services logs read jaimewhats --region=us-central1
+   ```
+
+   The QR code will appear in the logs when the service starts. You'll need to scan it to connect WhatsApp.
+
+#### Important Notes for Cloud Run
+
+- **WhatsApp Session Persistence**: The `.wwebjs_auth` folder is stored in the container's filesystem. If the container restarts or scales to zero, you may need to re-authenticate. Consider using Cloud Storage or a persistent volume for production.
+- **Resource Requirements**: The service is configured with 2GB RAM and 2 CPUs. Adjust in `cloudbuild.yaml` if needed.
+- **Timeout**: Set to 300 seconds (5 minutes). Increase if needed for long-running operations.
+- **Scaling**: Configured to allow up to 10 instances. Adjust based on your needs.
+
+#### Customizing Deployment
+
+Edit `cloudbuild.yaml` to customize:
+- Service name (`_SERVICE_NAME`)
+- Region (`_REGION`)
+- Memory and CPU allocation
+- Maximum instances
+- Timeout settings
 
 ## Troubleshooting
 

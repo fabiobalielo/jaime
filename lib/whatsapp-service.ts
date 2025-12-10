@@ -1,5 +1,7 @@
-import { Client, LocalAuth } from 'whatsapp-web.js';
-import qrcode from 'qrcode-terminal';
+import { Client, LocalAuth } from "whatsapp-web.js";
+import qrcode from "qrcode-terminal";
+import fs from "fs";
+import path from "path";
 
 // Use global to share state across Next.js module contexts
 declare global {
@@ -9,57 +11,67 @@ declare global {
 }
 
 const getClient = () => global.whatsappClient || null;
-const setClient = (c: Client | null) => { global.whatsappClient = c || undefined; };
+const setClient = (c: Client | null) => {
+  global.whatsappClient = c || undefined;
+};
 const isReady = () => global.whatsappReady || false;
-const setReady = (r: boolean) => { global.whatsappReady = r; };
+const setReady = (r: boolean) => {
+  global.whatsappReady = r;
+};
 const isConnecting = () => global.whatsappConnecting || false;
-const setConnecting = (c: boolean) => { global.whatsappConnecting = c; };
+const setConnecting = (c: boolean) => {
+  global.whatsappConnecting = c;
+};
 
 export const initializeWhatsApp = async () => {
   const client = getClient();
-  
+
   if (client && isReady()) {
-    console.log('WhatsApp client already initialized and ready');
-    console.log('Current state - Ready:', isReady(), 'Client:', !!client);
+    console.log("WhatsApp client already initialized and ready");
+    console.log("Current state - Ready:", isReady(), "Client:", !!client);
     return client;
   }
 
   if (isConnecting()) {
-    console.log('WhatsApp client is already connecting...');
+    console.log("WhatsApp client is already connecting...");
     return null;
   }
 
   setConnecting(true);
 
   try {
-    console.log('Initializing WhatsApp client...');
-    console.log('Checking for existing session in .wwebjs_auth/');
-    
+    console.log("Initializing WhatsApp client...");
+    console.log("Checking for existing session in .wwebjs_auth/");
+
     // Try to find system Chrome/Chromium
     const findChrome = () => {
+      // Check environment variable first (set in Dockerfile for Cloud Run)
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+      }
+
       const possiblePaths = [
-        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', // macOS
-        '/Applications/Chromium.app/Contents/MacOS/Chromium', // macOS Chromium
-        '/usr/bin/google-chrome', // Linux
-        '/usr/bin/chromium-browser', // Linux
-        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', // Windows
+        "/usr/bin/chromium", // Cloud Run / Linux
+        "/usr/bin/chromium-browser", // Linux
+        "/usr/bin/google-chrome", // Linux
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", // macOS
+        "/Applications/Chromium.app/Contents/MacOS/Chromium", // macOS Chromium
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe", // Windows
       ];
-      
-      const fs = require('fs');
-      for (const path of possiblePaths) {
-        if (fs.existsSync(path)) {
-          return path;
+
+      for (const chromePath of possiblePaths) {
+        if (fs.existsSync(chromePath)) {
+          return chromePath;
         }
       }
       return undefined;
     };
 
     const executablePath = findChrome();
-    const path = require('path');
-    const authPath = path.join(process.cwd(), '.wwebjs_auth');
-    
-    console.log('Auth path:', authPath);
-    
+    const authPath = path.join(process.cwd(), ".wwebjs_auth");
+
+    console.log("Auth path:", authPath);
+
     const newClient = new Client({
       authStrategy: new LocalAuth({
         dataPath: authPath,
@@ -68,51 +80,51 @@ export const initializeWhatsApp = async () => {
         headless: true,
         executablePath,
         args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu',
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-accelerated-2d-canvas",
+          "--no-first-run",
+          "--no-zygote",
+          "--disable-gpu",
         ],
       },
     });
 
-    newClient.on('qr', (qr) => {
-      console.log('\n===========================================');
-      console.log('SCAN QR CODE WITH YOUR WHATSAPP BUSINESS APP');
-      console.log('===========================================\n');
+    newClient.on("qr", (qr) => {
+      console.log("\n===========================================");
+      console.log("SCAN QR CODE WITH YOUR WHATSAPP BUSINESS APP");
+      console.log("===========================================\n");
       qrcode.generate(qr, { small: true });
-      console.log('\n===========================================\n');
+      console.log("\n===========================================\n");
     });
 
-    newClient.on('ready', () => {
-      console.log('\n✅✅✅ WhatsApp client is ready! ✅✅✅');
-      console.log('Setting global state to ready...');
+    newClient.on("ready", () => {
+      console.log("\n✅✅✅ WhatsApp client is ready! ✅✅✅");
+      console.log("Setting global state to ready...");
       setReady(true);
       setConnecting(false);
-      console.log('Global whatsappReady:', global.whatsappReady);
-      console.log('Global whatsappClient exists:', !!global.whatsappClient);
-      console.log('===========================================\n');
+      console.log("Global whatsappReady:", global.whatsappReady);
+      console.log("Global whatsappClient exists:", !!global.whatsappClient);
+      console.log("===========================================\n");
     });
 
-    newClient.on('authenticated', () => {
-      console.log('✓ WhatsApp client authenticated');
-    });
-    
-    newClient.on('loading_screen', (percent, message) => {
-      console.log('Loading...', percent, message);
+    newClient.on("authenticated", () => {
+      console.log("✓ WhatsApp client authenticated");
     });
 
-    newClient.on('auth_failure', (msg) => {
-      console.error('✗ Authentication failure:', msg);
+    newClient.on("loading_screen", (percent, message) => {
+      console.log("Loading...", percent, message);
+    });
+
+    newClient.on("auth_failure", (msg) => {
+      console.error("✗ Authentication failure:", msg);
       setConnecting(false);
       setReady(false);
     });
 
-    newClient.on('disconnected', (reason) => {
-      console.log('WhatsApp client disconnected:', reason);
+    newClient.on("disconnected", (reason) => {
+      console.log("WhatsApp client disconnected:", reason);
       setReady(false);
       setConnecting(false);
     });
@@ -121,7 +133,7 @@ export const initializeWhatsApp = async () => {
     await newClient.initialize();
     return newClient;
   } catch (error) {
-    console.error('Error initializing WhatsApp client:', error);
+    console.error("Error initializing WhatsApp client:", error);
     setConnecting(false);
     throw error;
   }
@@ -140,29 +152,29 @@ export const sendWhatsAppMessage = async (
   message: string
 ): Promise<{ success: boolean; error?: string }> => {
   const client = getClient();
-  
+
   if (!client || !isReady()) {
     return {
       success: false,
-      error: 'WhatsApp client is not ready. Please wait for QR code scan.',
+      error: "WhatsApp client is not ready. Please wait for QR code scan.",
     };
   }
 
   try {
     // Format number: remove any non-digit characters
-    let formattedNumber = number.replace(/\D/g, '');
-    
+    let formattedNumber = number.replace(/\D/g, "");
+
     // Remove leading zeros
-    formattedNumber = formattedNumber.replace(/^0+/, '');
-    
+    formattedNumber = formattedNumber.replace(/^0+/, "");
+
     console.log(`Attempting to send message to: ${formattedNumber}`);
     console.log(`Original number: ${number}`);
-    
+
     // Try to get the proper WhatsApp ID for the number
     let chatId;
     try {
       const numberId = await client.getNumberId(formattedNumber);
-      
+
       if (numberId) {
         chatId = numberId._serialized;
         console.log(`Got WhatsApp ID: ${chatId}`);
@@ -174,7 +186,7 @@ export const sendWhatsAppMessage = async (
         };
       }
     } catch (idError) {
-      console.error('Error getting number ID:', idError);
+      console.error("Error getting number ID:", idError);
       return {
         success: false,
         error: `Could not verify WhatsApp number. Please ensure the number is correct and includes the country code.`,
@@ -184,29 +196,29 @@ export const sendWhatsAppMessage = async (
     // Send the message
     console.log(`Sending message to chat ID: ${chatId}`);
     const result = await client.sendMessage(chatId, message);
-    
+
     console.log(`✓ Message sent successfully to ${formattedNumber}`);
-    console.log('Send result:', result);
+    console.log("Send result:", result);
     return { success: true };
   } catch (error) {
-    console.error('Error sending message:', error);
-    
-    let errorMessage = 'Unknown error occurred';
+    console.error("Error sending message:", error);
+
+    let errorMessage = "Unknown error occurred";
     if (error instanceof Error) {
       errorMessage = error.message;
-      
+
       // Provide more helpful error messages
-      if (errorMessage.includes('LID')) {
-        errorMessage = 'Invalid phone number format. Please include country code (e.g., +5511999999999 for Brazil).';
-      } else if (errorMessage.includes('not registered')) {
-        errorMessage = 'This number is not registered on WhatsApp.';
+      if (errorMessage.includes("LID")) {
+        errorMessage =
+          "Invalid phone number format. Please include country code (e.g., +5511999999999 for Brazil).";
+      } else if (errorMessage.includes("not registered")) {
+        errorMessage = "This number is not registered on WhatsApp.";
       }
     }
-    
+
     return {
       success: false,
       error: errorMessage,
     };
   }
 };
-

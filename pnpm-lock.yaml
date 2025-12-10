@@ -51,6 +51,9 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.19.26
+      '@types/qrcode-terminal':
+        specifier: ^0.12.2
+        version: 0.12.2
       '@types/react':
         specifier: ^19
         version: 19.2.7
@@ -598,6 +601,9 @@ packages:
 
   '@types/node@20.19.26':
     resolution: {integrity: sha512-0l6cjgF0XnihUpndDhk+nyD3exio3iKaYROSgvh/qSevPXax3L8p5DBRFjbvalnwatGgHEQn2R88y2fA3g4irg==}
+
+  '@types/qrcode-terminal@0.12.2':
+    resolution: {integrity: sha512-v+RcIEJ+Uhd6ygSQ0u5YYY7ZM+la7GgPbs0V/7l/kFs2uO4S8BcIUEMoP7za4DNIqNnUD5npf0A/7kBhrCKG5Q==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -3109,6 +3115,8 @@ snapshots:
   '@types/node@20.19.26':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/qrcode-terminal@0.12.2': {}
 
   '@types/react-dom@19.2.3(@types/react@19.2.7)':
     dependencies:
