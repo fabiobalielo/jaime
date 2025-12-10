@@ -90,6 +90,8 @@ RUN if [ -f /usr/bin/chromium ]; then \
 # Set Chromium path for Puppeteer
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV CHROME_BIN=/usr/bin/chromium
+ENV CHROME_PATH=/usr/bin/chromium
 
 # Create a non-root user
 RUN groupadd -r nextjs && useradd -r -g nextjs nextjs
@@ -100,10 +102,10 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 # Create directories for WhatsApp auth data and temp files
-RUN mkdir -p .wwebjs_auth /tmp/.X11-unix && chown -R nextjs:nextjs /app /tmp/.X11-unix
+RUN mkdir -p .wwebjs_auth .chrome_tmp && chown -R nextjs:nextjs /app
 
-# Set proper permissions for Chrome/Chromium to work
-RUN chmod -R 755 /app
+# Ensure /tmp has proper permissions for crash dumps
+RUN chmod 1777 /tmp
 
 USER nextjs
 

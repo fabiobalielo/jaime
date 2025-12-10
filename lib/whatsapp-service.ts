@@ -89,6 +89,12 @@ export const initializeWhatsApp = async () => {
 
     console.log("✓ Chromium executable verified at:", executablePath);
 
+    // Create temp directory for Chrome if it doesn't exist
+    const tmpDir = path.join(process.cwd(), ".chrome_tmp");
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+
     const newClient = new Client({
       authStrategy: new LocalAuth({
         dataPath: authPath,
@@ -112,7 +118,7 @@ export const initializeWhatsApp = async () => {
           "--disable-backgrounding-occluded-windows",
           "--disable-breakpad",
           "--disable-component-extensions-with-background-pages",
-          "--disable-features=TranslateUI",
+          "--disable-features=TranslateUI,site-per-process,Translate",
           "--disable-ipc-flooding-protection",
           "--disable-renderer-backgrounding",
           "--disable-sync",
@@ -122,7 +128,8 @@ export const initializeWhatsApp = async () => {
           "--hide-scrollbars",
           "--disable-default-apps",
           "--disable-crash-reporter", // Disable crash reporting to avoid the crash handler error
-          "--disable-crashpad", // Disable crashpad entirely
+          "--crash-dumps-dir=/tmp", // Set crash dump directory to /tmp
+          "--user-data-dir=" + tmpDir, // Set user data directory
         ],
       },
     });
