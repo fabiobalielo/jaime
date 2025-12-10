@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import countryCodesData from '@/data/country-codes.json';
+import { useState, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import countryCodesData from "@/data/country-codes.json";
 
 export default function MessageForm() {
   // Process and sort country codes
@@ -14,20 +20,20 @@ export default function MessageForm() {
     return countryCodesData
       .map((country) => ({
         ...country,
-        dial_code: country.dial_code.replace(/\s+/g, ''), // Remove spaces from dial codes
+        dial_code: country.dial_code.replace(/\s+/g, ""), // Remove spaces from dial codes
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
-  const [name, setName] = useState('');
-  const [countryCode, setCountryCode] = useState('+55');
-  const [number, setNumber] = useState('');
-  const [message, setMessage] = useState('');
+  const [name, setName] = useState("");
+  const [countryCode, setCountryCode] = useState("+55");
+  const [number, setNumber] = useState("");
+  const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{
-    type: 'success' | 'error' | 'info' | null;
+    type: "success" | "error" | "info" | null;
     message: string;
-  }>({ type: null, message: '' });
+  }>({ type: null, message: "" });
   const [whatsappReady, setWhatsappReady] = useState<boolean | null>(null);
 
   // Check WhatsApp connection status on mount
@@ -39,35 +45,37 @@ export default function MessageForm() {
 
   const checkWhatsAppStatus = async () => {
     try {
-      const response = await fetch('/api/status');
-      const data = await response.json();
-      console.log('WhatsApp status:', data);
-      setWhatsappReady(data.ready);
+      const response = await fetch("/api/status");
+      const result = await response.json();
+      console.log("WhatsApp status:", result);
+      setWhatsappReady(result.data?.ready ?? false);
     } catch (error) {
-      console.error('Error checking WhatsApp status:', error);
+      console.error("Error checking WhatsApp status:", error);
+      setWhatsappReady(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setStatus({ type: null, message: '' });
+    setStatus({ type: null, message: "" });
 
     // Validate name
     if (!name || name.trim().length < 3) {
       setStatus({
-        type: 'error',
-        message: 'Your name is required and must be at least 3 characters long.',
+        type: "error",
+        message:
+          "Your name is required and must be at least 3 characters long.",
       });
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch('/api/send-message', {
-        method: 'POST',
+      const response = await fetch("/api/send-message", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -80,23 +88,23 @@ export default function MessageForm() {
 
       if (response.ok) {
         setStatus({
-          type: 'success',
+          type: "success",
           message: `Message sent successfully to ${countryCode}${number}!`,
         });
         // Clear form on success
-        setName('');
-        setNumber('');
-        setMessage('');
+        setName("");
+        setNumber("");
+        setMessage("");
       } else {
         setStatus({
-          type: 'error',
-          message: data.error || 'Failed to send message',
+          type: "error",
+          message: data.error || "Failed to send message",
         });
       }
-    } catch (error) {
+    } catch {
       setStatus({
-        type: 'error',
-        message: 'Network error. Please try again.',
+        type: "error",
+        message: "Network error. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -106,11 +114,11 @@ export default function MessageForm() {
   const formatPreview = (text: string) => {
     // Preview WhatsApp formatting
     return text
-      .replace(/\*(.*?)\*/g, '<strong>$1</strong>') // Bold
-      .replace(/_(.*?)_/g, '<em>$1</em>') // Italic
-      .replace(/~(.*?)~/g, '<del>$1</del>') // Strikethrough
-      .replace(/```(.*?)```/g, '<code>$1</code>') // Monospace
-      .replace(/\n/g, '<br />'); // Line breaks
+      .replace(/\*(.*?)\*/g, "<strong>$1</strong>") // Bold
+      .replace(/_(.*?)_/g, "<em>$1</em>") // Italic
+      .replace(/~(.*?)~/g, "<del>$1</del>") // Strikethrough
+      .replace(/```(.*?)```/g, "<code>$1</code>") // Monospace
+      .replace(/\n/g, "<br />"); // Line breaks
   };
 
   return (
@@ -130,18 +138,18 @@ export default function MessageForm() {
               <div
                 className={`h-3 w-3 rounded-full ${
                   whatsappReady === null
-                    ? 'bg-gray-400'
+                    ? "bg-gray-400"
                     : whatsappReady
-                    ? 'bg-green-500 animate-pulse'
-                    : 'bg-red-500'
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-red-500"
                 }`}
               />
               <span className="text-sm text-gray-600">
                 {whatsappReady === null
-                  ? 'Checking...'
+                  ? "Checking..."
                   : whatsappReady
-                  ? 'Connected'
-                  : 'Disconnected'}
+                  ? "Connected"
+                  : "Disconnected"}
               </span>
             </div>
           </div>
@@ -150,7 +158,8 @@ export default function MessageForm() {
           {whatsappReady === false && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800">
-                ⚠️ WhatsApp is not connected. Check the server terminal to scan the QR code.
+                ⚠️ WhatsApp is not connected. Check the server terminal to scan
+                the QR code.
               </p>
             </div>
           )}
@@ -171,7 +180,8 @@ export default function MessageForm() {
                 className="w-full"
               />
               <p className="text-xs text-gray-500">
-                Your name will appear in bold at the beginning of the message (minimum 3 characters)
+                Your name will appear in bold at the beginning of the message
+                (minimum 3 characters)
               </p>
             </div>
 
@@ -197,7 +207,7 @@ export default function MessageForm() {
                   type="tel"
                   placeholder="11999999999"
                   value={number}
-                  onChange={(e) => setNumber(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => setNumber(e.target.value.replace(/\D/g, ""))}
                   required
                   className="w-full"
                 />
@@ -232,7 +242,9 @@ export default function MessageForm() {
                   <div
                     className="text-sm whitespace-pre-wrap"
                     dangerouslySetInnerHTML={{
-                      __html: formatPreview(name ? `*${name}*\n\n${message}` : message),
+                      __html: formatPreview(
+                        name ? `*${name}*\n\n${message}` : message
+                      ),
                     }}
                   />
                 </div>
@@ -242,11 +254,11 @@ export default function MessageForm() {
             {status.type && (
               <div
                 className={`p-4 rounded-lg ${
-                  status.type === 'success'
-                    ? 'bg-green-50 text-green-800 border border-green-200'
-                    : status.type === 'error'
-                    ? 'bg-red-50 text-red-800 border border-red-200'
-                    : 'bg-blue-50 text-blue-800 border border-blue-200'
+                  status.type === "success"
+                    ? "bg-green-50 text-green-800 border border-green-200"
+                    : status.type === "error"
+                    ? "bg-red-50 text-red-800 border border-red-200"
+                    : "bg-blue-50 text-blue-800 border border-blue-200"
                 }`}
               >
                 <p className="text-sm font-medium">{status.message}</p>
@@ -255,7 +267,9 @@ export default function MessageForm() {
 
             <Button
               type="submit"
-              disabled={isLoading || !whatsappReady || !name || name.trim().length < 3}
+              disabled={
+                isLoading || !whatsappReady || !name || name.trim().length < 3
+              }
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-6 text-lg"
             >
               {isLoading ? (
@@ -283,7 +297,7 @@ export default function MessageForm() {
                   Sending...
                 </span>
               ) : (
-                'Send WhatsApp Message'
+                "Send WhatsApp Message"
               )}
             </Button>
           </form>
